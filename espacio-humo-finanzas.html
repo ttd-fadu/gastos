@@ -5,6 +5,80 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Gastos</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script type="module">
+// ── FIREBASE ──
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEvh9wG3bCVbLBmvTyIaapRtsk3S0rdmE",
+  authDomain: "gastos-espacio-humo.firebaseapp.com",
+  projectId: "gastos-espacio-humo",
+  storageBucket: "gastos-espacio-humo.firebasestorage.app",
+  messagingSenderId: "101788853799",
+  appId: "1:101788853799:web:38d5daa229fcb9406e5002"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+const auth = getAuth(fbApp);
+
+const DOC_REF = doc(db, 'gastos', 'shared');
+
+// Sync indicator
+function setSyncStatus(status) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  if (status === 'ok')      { el.textContent = '●'; el.style.color = '#245E55'; el.title = 'Sincronizado'; }
+  else if (status === 'saving') { el.textContent = '○'; el.style.color = '#D4A800'; el.title = 'Guardando...'; }
+  else                      { el.textContent = '●'; el.style.color = '#C63F3E'; el.title = 'Sin conexión'; }
+}
+
+let _ignoreNextSnapshot = false;
+let _saveTimeout = null;
+
+// Called from saveState() — debounced push to Firestore
+window.firebaseSave = function(stateJson) {
+  setSyncStatus('saving');
+  _ignoreNextSnapshot = true;
+  clearTimeout(_saveTimeout);
+  _saveTimeout = setTimeout(async () => {
+    try {
+      await setDoc(DOC_REF, { data: stateJson, ts: Date.now() });
+      setSyncStatus('ok');
+    } catch(e) {
+      console.error('Firebase save error:', e);
+      setSyncStatus('error');
+      _ignoreNextSnapshot = false;
+    }
+  }, 800); // debounce 800ms so rapid changes batch together
+};
+
+// Sign in anonymously then start listening
+signInAnonymously(auth).then(() => {
+  setSyncStatus('ok');
+
+  // Listen for remote changes (from the other device)
+  onSnapshot(DOC_REF, (snap) => {
+    if (!snap.exists()) return;
+    if (_ignoreNextSnapshot) { _ignoreNextSnapshot = false; return; }
+    const remote = snap.data();
+    if (!remote?.data) return;
+    try {
+      const parsed = JSON.parse(remote.data);
+      // Merge remote into local state — remote wins on conflicts
+      if (typeof window.mergeRemoteState === 'function') {
+        window.mergeRemoteState(parsed);
+      }
+    } catch(e) { console.error('Firebase parse error:', e); }
+  });
+
+}).catch(e => {
+  console.error('Firebase auth error:', e);
+  setSyncStatus('error');
+});
+</script>
 <style>
 :root {
   --klein:    #1B2FD8;
@@ -292,7 +366,10 @@ document.addEventListener('touchend', e => {
 <div class="screen active" id="screen-home">
   <div class="home-header">
     <div class="header-top">
-      <div class="app-name">Gastos</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="app-name">Gastos</div>
+        <span id="sync-status" style="font-size:14px;color:#D4A800;cursor:default;transition:color 0.3s;" title="Sincronizando...">○</span>
+      </div>
       <div class="header-settings" onclick="openModal('modal-settings')">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/><circle cx="5" cy="4" r="1.5" fill="currentColor"/><circle cx="10" cy="8" r="1.5" fill="currentColor"/><circle cx="6" cy="12" r="1.5" fill="currentColor"/></svg>
       </div>
@@ -896,6 +973,19 @@ let state = {
 };
 let pendingBotTx = null;
 
+function mergeRemoteState(remote) {
+  // Called when the other device saves — merge and re-render
+  // Preserve local currentMonth/currentYear/currentSpace (UI state)
+  const m = state.currentMonth, y = state.currentYear, sp = state.currentSpace;
+  state = { ...state, ...remote };
+  state.currentMonth = m; state.currentYear = y; state.currentSpace = sp;
+  // Also update localStorage
+  localStorage.setItem('eh_state', JSON.stringify(state));
+  renderAll();
+}
+// Make it accessible to the Firebase module
+window.mergeRemoteState = mergeRemoteState;
+
 function loadState(){
   const s=localStorage.getItem('eh_state');
   if(s){try{const p=JSON.parse(s);state={...state,...p};state.currentMonth=new Date().getMonth();state.currentYear=new Date().getFullYear();}catch(e){}}
@@ -905,7 +995,11 @@ function loadState(){
   if(!Array.isArray(state.patrimonio))state.patrimonio=[];
   if(!state.savings)state.savings=0;
 }
-function saveState(){localStorage.setItem('eh_state',JSON.stringify(state));}
+function saveState(){
+  const json = JSON.stringify(state);
+  localStorage.setItem('eh_state', json);
+  if (typeof window.firebaseSave === 'function') window.firebaseSave(json);
+}
 
 // ══════════════════════ FORMAT ══════════════════════
 function fmt(n){
