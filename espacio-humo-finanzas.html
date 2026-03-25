@@ -438,7 +438,16 @@ document.addEventListener('touchend', e => {
       <button class="space-btn active" onclick="setSpace('casa')">Casa</button>
       <button class="space-btn" onclick="setSpace('estudio')">Espacio Humo</button>
     </div>
-    <div class="month-nav">
+    <!-- SEARCH BAR -->
+    <div style="position:relative;margin-bottom:10px;">
+      <input type="text" id="tx-search" class="form-input"
+        placeholder="Buscar gasto... ej: verdulería, farmacia"
+        oninput="renderTxList()"
+        style="padding-left:38px;"/>
+      <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:0.35;" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round"><circle cx="6.5" cy="6.5" r="4"/><line x1="10" y1="10" x2="14" y2="14"/></svg>
+      <div id="tx-search-clear" onclick="clearTxSearch()" style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--muted);font-size:18px;line-height:1;">×</div>
+    </div>
+    <div class="month-nav" id="tx-month-nav">
       <button class="month-btn" onclick="changeMonth(-1)">‹</button>
       <div class="month-label" id="tx-month-label">Marzo 2026</div>
       <button class="month-btn" onclick="changeMonth(1)">›</button>
@@ -1481,7 +1490,10 @@ function transferToSavings(){
   let cotiz = null;
   if (asset?.currency==='USD') {
     cotiz = parseFmt(document.getElementById('transfer-cotiz')) || (state.settings.cotizUSD||1300);
+    if(!cotiz||cotiz<=0) cotiz = state.settings.cotizUSD||1300;
     amountARS = amountFx * cotiz;
+    // Save cotiz for future reference
+    state.settings.cotizUSD = cotiz;
   }
   const tx={id:Date.now().toString()+'t',amount:amountARS,amountFx,assetId,type:'savings',desc,goalId,date:new Date().toISOString().split('T')[0],comment:'',cotiz};
   state.patrimonio.unshift(tx);
@@ -1570,10 +1582,43 @@ function renderCatBars(containerId,catTotals,compact){
 // ══════════════════════ TX LIST ══════════════════════
 function renderTxList(){
   const el=document.getElementById('tx-list');el.innerHTML='';
-  const txs=getMonthTx(state.currentMonth,state.currentYear,state.currentSpace).filter(t=>t.type!=='savings');
-  if(!txs.length){el.innerHTML='<div style="text-align:center;padding:36px 0;color:var(--muted);font-size:14px;">Sin movimientos este mes.</div>';return;}
-  const wrap=document.createElement('div');wrap.style.borderTop='1px solid var(--border)';
-  txs.forEach(tx=>renderTxItem(wrap,tx));el.appendChild(wrap);
+  const searchEl=document.getElementById('tx-search');
+  const query=(searchEl?.value||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const clearBtn=document.getElementById('tx-search-clear');
+  const monthNav=document.getElementById('tx-month-nav');
+
+  if(query.length>0){
+    // Search mode: search ALL transactions (all months, both spaces)
+    if(clearBtn)clearBtn.style.display='block';
+    if(monthNav)monthNav.style.display='none';
+    const all=state.transactions.filter(t=>t.type!=='savings'&&(
+      (t.desc||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(query)||
+      (t.comment||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(query)||
+      t.categories.some(cid=>(getCatById(cid)?.name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(query))||
+      (t.payment||'').toLowerCase().includes(query)
+    )).slice(0,60);
+    if(!all.length){el.innerHTML='<div style="text-align:center;padding:36px 0;color:var(--muted);font-size:14px;">Sin resultados para "'+query+'"</div>';return;}
+    const wrap=document.createElement('div');wrap.style.borderTop='1px solid var(--border)';
+    const summary=document.createElement('div');
+    summary.style.cssText='font-size:12px;color:var(--muted);padding:8px 0 4px;';
+    summary.textContent=all.length+' resultado'+(all.length===1?'':'s');
+    el.appendChild(summary);
+    all.forEach(tx=>renderTxItem(wrap,tx));el.appendChild(wrap);
+  } else {
+    // Normal mode: show current month
+    if(clearBtn)clearBtn.style.display='none';
+    if(monthNav)monthNav.style.display='flex';
+    const txs=getMonthTx(state.currentMonth,state.currentYear,state.currentSpace).filter(t=>t.type!=='savings');
+    if(!txs.length){el.innerHTML='<div style="text-align:center;padding:36px 0;color:var(--muted);font-size:14px;">Sin movimientos este mes.</div>';return;}
+    const wrap=document.createElement('div');wrap.style.borderTop='1px solid var(--border)';
+    txs.forEach(tx=>renderTxItem(wrap,tx));el.appendChild(wrap);
+  }
+}
+
+function clearTxSearch(){
+  const el=document.getElementById('tx-search');
+  if(el)el.value='';
+  renderTxList();
 }
 function renderTxItem(container,tx){
   const cat=tx.categories.length>0?getCatById(tx.categories[0]):null;
@@ -1588,9 +1633,42 @@ function renderTxItem(container,tx){
 function openTxDetail(id){
   state.selectedTxId=id;const tx=state.transactions.find(t=>t.id===id);if(!tx)return;
   const el=document.getElementById('tx-detail-content');
-  const cat=tx.categories[0]?getCatById(tx.categories[0]):null;
-  const tags=tx.categories.map(id=>{const c=getCatById(id);return c?`<span class="tx-tag" style="background:${c.color}18;color:${c.color};font-size:13px;padding:4px 10px;">${c.name}</span>`:''}).join(' ');
-  el.innerHTML=`<div style="font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:0.02em;color:${tx.type==='income'?'var(--klein)':'var(--terracota)'};margin-bottom:4px;">${tx.type==='income'?'+':'-'}$${fmt(tx.amount)}</div><div style="font-size:17px;margin-bottom:10px;font-weight:500;">${tx.desc}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">${tags}</div><div style="font-size:13px;color:var(--muted);">${fmtDate(tx.date)} · ${tx.payment||''} · ${tx.space==='estudio'?'Espacio Humo':'Casa'}</div>${tx.comment?`<div style="font-size:13px;color:var(--muted);margin-top:5px;">${tx.comment}</div>`:''}${tx.currency==='USD'?`<div style="font-size:12px;color:var(--lavender);margin-top:5px;">U$D ${tx.usdAmount} × $${fmt(tx.cotizacion)}</div>`:''}`;
+  const tags=tx.categories.map(cid=>{const c=getCatById(cid);return c?`<span class="tx-tag" style="background:${c.color}18;color:${c.color};font-size:13px;padding:4px 10px;">${c.name}</span>`:''}).join(' ');
+  el.innerHTML=`
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:0.02em;color:${tx.type==='income'?'var(--klein)':'var(--terracota)'};margin-bottom:4px;">${tx.type==='income'?'+':'-'}$${fmt(tx.amount)}</div>
+    <div style="font-size:17px;margin-bottom:10px;font-weight:500;">${tx.desc}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">${tags||'<span style="font-size:13px;color:var(--muted);">Sin categoría</span>'}</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">${fmtDate(tx.date)} · ${tx.payment||''} · ${tx.space==='estudio'?'Espacio Humo':'Casa'}</div>
+    ${tx.comment?`<div style="font-size:13px;color:var(--muted);margin-bottom:10px;">${tx.comment}</div>`:''}
+    ${tx.currency==='USD'?`<div style="font-size:12px;color:var(--lavender);margin-bottom:10px;">U$D ${tx.usdAmount} × $${fmt(tx.cotizacion)}</div>`:''}
+    ${tx.type==='expense'?`<div style="margin-bottom:6px;">
+      <div style="font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">Cambiar categorías</div>
+      <div id="edit-cat-pills" style="display:flex;gap:7px;flex-wrap:wrap;"></div>
+    </div>`:''}`;
+  // Render editable category pills for expenses
+  if(tx.type==='expense'){
+    const container=document.getElementById('edit-cat-pills');
+    getCategories().sort((a,b)=>a.name.localeCompare(b.name,'es')).forEach(cat=>{
+      const sel=tx.categories.includes(cat.id);
+      const p=document.createElement('div');p.className='pill'+(sel?' sel':'');
+      p.style.cssText=sel?`background:${cat.color};color:${textOnColor(cat.color)};border-color:transparent;font-size:12px;padding:5px 10px;`:'font-size:12px;padding:5px 10px;color:var(--text);background:var(--surface);';
+      p.textContent=cat.name;p.dataset.cat=cat.id;
+      p.onclick=()=>{
+        const tx2=state.transactions.find(t=>t.id===state.selectedTxId);if(!tx2)return;
+        if(p.classList.contains('sel')){
+          // Deselect — only if not the last one
+          if(tx2.categories.length<=1){showToast('Necesitás al menos una categoría');return;}
+          tx2.categories=tx2.categories.filter(c=>c!==cat.id);
+          p.classList.remove('sel');p.style.cssText='font-size:12px;padding:5px 10px;color:var(--text);background:var(--surface);';
+        } else {
+          tx2.categories.push(cat.id);
+          p.classList.add('sel');p.style.cssText=`background:${cat.color};color:${textOnColor(cat.color)};border-color:transparent;font-size:12px;padding:5px 10px;`;
+        }
+        saveState();renderAll();
+      };
+      container.appendChild(p);
+    });
+  }
   openModal('modal-tx-detail');
 }
 function deleteTx(){state.transactions=state.transactions.filter(t=>t.id!==state.selectedTxId);saveState();closeModal('modal-tx-detail');renderAll();showToast('Eliminado');}
@@ -1788,10 +1866,12 @@ function getAssets() {
 }
 
 function getAssetBalance(assetId) {
-  // Sum all patrimonio movements for this asset
+  const asset = getAssets().find(a=>a.id===assetId);
   return (state.patrimonio||[]).reduce((s,tx)=>{
-    if(tx.assetId===assetId) return s + (tx.amount||0);
-    return s;
+    if(tx.assetId!==assetId) return s;
+    // For USD assets use amountFx (the dollar amount), for ARS use amount
+    const val = (asset?.currency==='USD' && tx.amountFx!=null) ? tx.amountFx : (tx.amount||0);
+    return s + val;
   }, 0);
 }
 
@@ -1838,7 +1918,7 @@ function renderPatrimonio() {
       card.style.cssText = `background:${asset.color}18;border:1.5px solid ${asset.color}44;border-radius:var(--r);padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;`;
       card.onclick = () => openAssetDeposit(asset.id);
       const valStr = asset.currency === 'USD'
-        ? `U$D ${bal.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})}`
+        ? `U$D ${bal % 1 === 0 ? fmt(bal) : bal.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})}`
         : `$${fmt(bal)}`;
       const arsStr = asset.currency === 'USD' ? `<div style="font-size:11px;color:${asset.color};opacity:0.6;margin-top:1px;">≈ $${fmt(balARS)} ARS</div>` : '';
       card.innerHTML = `<div><div style="font-size:12px;font-weight:600;color:${asset.color};text-transform:uppercase;letter-spacing:0.05em;">${asset.name}</div>${arsStr}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${asset.color};letter-spacing:0.02em;">${valStr}</div>`;
@@ -1862,8 +1942,9 @@ function renderPatrimonio() {
     const isusd = asset?.currency === 'USD';
     const item = document.createElement('div');
     item.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border);';
+    const rawFx = Math.abs(tx.amountFx||tx.amount);
     const valStr = isusd
-      ? `${isWithdraw?'-':'+'}U$D ${Math.abs(tx.amountFx||tx.amount).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})}`
+      ? `${isWithdraw?'-':'+'}U$D ${rawFx%1===0?fmt(rawFx):rawFx.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})}`
       : `${isWithdraw?'-':'+'}$${fmt(Math.abs(tx.amount))}`;
     item.innerHTML = `<div><div style="font-size:14px;font-weight:500;${isWithdraw?'color:var(--terracota);':''}"> ${tx.desc}</div><div style="font-size:11px;color:var(--muted);margin-top:1px;">${fmtDate(tx.date)} · ${asset?.name||''}</div></div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.02em;color:${isWithdraw?'var(--terracota)':'var(--mustard)'};">${valStr}</div>`;
     el.appendChild(item);
