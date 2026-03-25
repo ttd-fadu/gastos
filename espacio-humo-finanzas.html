@@ -898,43 +898,25 @@ document.addEventListener('touchend', e => {
 <script>
 // ══════════════════════ CATEGORY SYSTEM ══════════════════════
 const CAT_GROUPS = [
-  { id:'viveres',  label:'Víveres',      color:'#245E55' },
-  { id:'casa',     label:'Casa',         color:'#1B2FD8' },
-  { id:'auto',     label:'Auto',         color:'#0A0A0A' },
-  { id:'salud',    label:'Salud',        color:'#808BC5' },
-  { id:'bienestar',label:'Bienestar',    color:'#9ED6DF' },
-  { id:'social',   label:'Vida social',  color:'#D4A800' },
-  { id:'otros',    label:'Otros',        color:'#B5AFA7' },
+  { id:'viveres',   label:'Víveres',      color:'#245E55' },
+  { id:'casa',      label:'Casa',         color:'#1B2FD8' },
+  { id:'auto',      label:'Auto',         color:'#4A4A4A' },
+  { id:'salud',     label:'Salud',        color:'#808BC5' },
+  { id:'bienestar', label:'Bienestar',    color:'#9ED6DF' },
+  { id:'social',    label:'Vida social',  color:'#D4A800' },
+  { id:'otros',     label:'Otros',        color:'#B5AFA7' },
 ];
 
 const BASE_CATS = [
-  {id:'supermercado', name:'Supermercado',   group:'viveres', color:'#245E55'},
-  {id:'verduleria',   name:'Verdulería',     group:'viveres', color:'#245E55'},
-  {id:'almacen',      name:'Almacén',        group:'viveres', color:'#245E55'},
-  {id:'dietetica',    name:'Dietética',      group:'viveres', color:'#245E55'},
-  {id:'limpieza',     name:'Limpieza hogar', group:'viveres', color:'#245E55'},
-  {id:'expensas',     name:'Expensas',       group:'casa',    color:'#1B2FD8'},
-  {id:'servicios',    name:'Servicios',      group:'casa',    color:'#1B2FD8'},
-  {id:'seguro_hogar', name:'Seguro hogar',   group:'casa',    color:'#1B2FD8'},
-  {id:'mantenimiento',name:'Mantenimiento',  group:'casa',    color:'#1B2FD8'},
-  {id:'nafta',        name:'Nafta',          group:'auto',    color:'#0A0A0A'},
-  {id:'estacionamiento',name:'Estacionamiento',group:'auto',  color:'#0A0A0A'},
-  {id:'lavado_auto',  name:'Lavado auto',    group:'auto',    color:'#0A0A0A'},
-  {id:'service',      name:'Service / Rep.', group:'auto',    color:'#0A0A0A'},
-  {id:'seguro_auto',  name:'Seguro auto',    group:'auto',    color:'#0A0A0A'},
-  {id:'prepaga',      name:'Prepaga / OSDE', group:'salud',   color:'#808BC5'},
-  {id:'farmacia',     name:'Farmacia',       group:'salud',   color:'#808BC5'},
-  {id:'medico',       name:'Médico',         group:'salud',   color:'#808BC5'},
-  {id:'kinesio',      name:'Kinesiología',   group:'salud',   color:'#808BC5'},
-  {id:'terapia',      name:'Terapia',        group:'bienestar',color:'#9ED6DF'},
-  {id:'deporte',      name:'Deporte / Gym',  group:'bienestar',color:'#9ED6DF'},
-  {id:'restaurante',  name:'Restaurante',    group:'social',  color:'#D4A800'},
-  {id:'cafe',         name:'Café',           group:'social',  color:'#D4A800'},
-  {id:'delivery',     name:'Delivery',       group:'social',  color:'#D4A800'},
-  {id:'alcohol',      name:'Alcohol',        group:'social',  color:'#C63F3E'},
-  {id:'regalos',      name:'Regalos',        group:'otros',   color:'#EAA7C7'},
-  {id:'enmarcacion',  name:'Enmarcación',    group:'otros',   color:'#1B2FD8'},
-  {id:'otros',        name:'Otros',          group:'otros',   color:'#B5AFA7'},
+  {id:'viveres',    name:'Víveres',       group:'viveres',  color:'#245E55'},
+  {id:'casa',       name:'Casa',          group:'casa',     color:'#1B2FD8'},
+  {id:'auto',       name:'Auto',          group:'auto',     color:'#4A4A4A'},
+  {id:'salud',      name:'Salud',         group:'salud',    color:'#808BC5'},
+  {id:'bienestar',  name:'Bienestar',     group:'bienestar',color:'#9ED6DF'},
+  {id:'social',     name:'Vida social',   group:'social',   color:'#D4A800'},
+  {id:'regalos',    name:'Regalos',       group:'otros',    color:'#EAA7C7'},
+  {id:'enmarcacion',name:'Enmarcación',   group:'otros',    color:'#1B2FD8'},
+  {id:'otros',      name:'Otros',         group:'otros',    color:'#B5AFA7'},
 ];
 
 // Merge base + custom
@@ -1241,69 +1223,61 @@ function onBotInput(){
 }
 
 const BOT_KW = {
-  // Auto
-  'estacionamiento':'estacionamiento','nafta':'nafta','combustible':'nafta','gasolina':'nafta',
-  'lavado':'lavado_auto','garage':'estacionamiento','peaje':'estacionamiento',
-  'service':'service','mecanico':'service','mecánico':'service','taller':'service',
-  'seguro auto':'seguro_auto','patente':'seguro_auto',
-  // Salud
-  'kinesiolog':'kinesio','medico':'medico','doctor':'medico','médico':'medico',
-  'farmacia':'farmacia','osde':'prepaga','prepaga':'prepaga','obra social':'prepaga',
-  'hospital':'medico','clinica':'medico','dentista':'medico','oculista':'medico',
-  // Bienestar
-  'terapia':'terapia','psicologo':'terapia','psicólogo':'terapia','psiquiatra':'terapia',
-  'gym':'deporte','natacion':'deporte','natación':'deporte','pilates':'deporte',
-  'yoga':'deporte','futbol':'deporte','tenis':'deporte','crossfit':'deporte',
-  // Víveres — supermercado
-  'super ':'supermercado','mercado ':'supermercado','carrefour':'supermercado',
-  'coto':'supermercado','disco ':'supermercado','jumbo':'supermercado',
-  'panaderia':'almacen','panadería':'almacen','kiosco':'almacen',
-  'chocolate':'almacen','granola':'almacen','cafe molido':'almacen','arroz':'almacen',
-  'harina':'almacen','aceite':'almacen','leche':'almacen','azucar':'almacen','azúcar':'almacen',
-  'queso':'almacen','fiambre':'almacen','yogur':'almacen','manteca':'almacen',
-  // Víveres — verdulería (ampliado con productos concretos)
-  'verdu':'verduleria','verdura':'verduleria','fruta':'verduleria',
-  'feria':'verduleria','girgola':'verduleria','hongos':'verduleria',
-  'tomate':'verduleria','zanahoria':'verduleria','lechuga':'verduleria',
-  'papa':'verduleria','zapallo':'verduleria','cebolla':'verduleria',
-  'ajo':'verduleria','pimiento':'verduleria','berenjena':'verduleria',
-  'manzana':'verduleria','banana':'verduleria','naranja':'verduleria',
-  'limon':'verduleria','limón':'verduleria','pera':'verduleria','uva':'verduleria',
-  'frutilla':'verduleria','durazno':'verduleria','sandia':'verduleria','sandía':'verduleria',
-  'espinaca':'verduleria','acelga':'verduleria','brócoli':'verduleria','brocoli':'verduleria',
-  'choclo':'verduleria','batata':'verduleria','remolacha':'verduleria',
-  'perejil':'verduleria','cilantro':'verduleria','albahaca':'verduleria',
-  // Víveres — dietética
-  'dietetica':'dietetica','dietética':'dietetica','integral':'dietetica',
-  'semilla':'dietetica','avena':'dietetica','proteina':'dietetica','proteína':'dietetica',
-  // Víveres — limpieza hogar
-  'limpieza':'limpieza','desodorante':'limpieza','jabon':'limpieza','jabón':'limpieza',
-  'lavandina':'limpieza','detergente':'limpieza','escoba':'limpieza','trapo':'limpieza',
-  // Vida social
-  'restaurant':'restaurante','cafe ':'cafe','cafeteria':'cafe','cafetería':'cafe',
-  'pizza':'restaurante','sushi':'restaurante','delivery':'delivery',
-  'almuerzo':'restaurante','cena':'restaurante','desayuno':'cafe',
-  'tiepolo':'restaurante','avito':'restaurante','mcdonalds':'restaurante',
-  'hamburguesa':'restaurante','empanada':'restaurante','medialunas':'cafe',
-  'vino':'alcohol','cerveza':'alcohol','fernet':'alcohol','whisky':'alcohol',
-  'trago':'alcohol','ginebra':'alcohol','campari':'alcohol',
-  'regalo':'regalos','cumple':'regalos','presente':'regalos',
+  // Víveres
+  'super ':'viveres','supermercado':'viveres','mercado ':'viveres','carrefour':'viveres',
+  'coto':'viveres','disco ':'viveres','jumbo':'viveres',
+  'verdu':'viveres','verdura':'viveres','fruta':'viveres','feria':'viveres',
+  'tomate':'viveres','zanahoria':'viveres','lechuga':'viveres','papa':'viveres',
+  'zapallo':'viveres','cebolla':'viveres','ajo':'viveres','espinaca':'viveres',
+  'acelga':'viveres','brocoli':'viveres','brócoli':'viveres','choclo':'viveres',
+  'manzana':'viveres','banana':'viveres','naranja':'viveres','limon':'viveres',
+  'limón':'viveres','pera':'viveres','uva':'viveres','frutilla':'viveres',
+  'girgola':'viveres','hongos':'viveres','perejil':'viveres','cilantro':'viveres',
+  'almacen':'viveres','almacén':'viveres','panaderia':'viveres','panadería':'viveres',
+  'kiosco':'viveres','chocolate':'viveres','granola':'viveres','leche':'viveres',
+  'manteca':'viveres','queso':'viveres','fiambre':'viveres','yogur':'viveres',
+  'huevo':'viveres','arroz':'viveres','harina':'viveres','aceite':'viveres',
+  'azucar':'viveres','azúcar':'viveres','fideos':'viveres','yerba':'viveres',
+  'dietetica':'viveres','dietética':'viveres','avena':'viveres','semilla':'viveres',
+  'limpieza':'viveres','desodorante':'viveres','jabon':'viveres','jabón':'viveres',
+  'lavandina':'viveres','detergente':'viveres',
   // Casa
-  'gas ':'servicios','luz ':'servicios','agua ':'servicios',
-  'expensa':'expensas','alquiler':'expensas',
-  'edesur':'servicios','metrogas':'servicios','aysa':'servicios',
-  'tarjeta':'expensas','icbc':'expensas',
-  'pintura':'mantenimiento','plomero':'mantenimiento','electricista':'mantenimiento',
-  'carpintero':'mantenimiento','reparacion':'mantenimiento','reparación':'mantenimiento',
-  // Espacio Humo
+  'expensa':'casa','alquiler':'casa','edesur':'casa','metrogas':'casa','aysa':'casa',
+  'gas ':'casa','luz ':'casa','agua ':'casa','servicios':'casa',
+  'seguro hogar':'casa','seguro casa':'casa',
+  'plomero':'casa','electricista':'casa','pintura':'casa','carpintero':'casa',
+  'mantenimiento':'casa','reparacion':'casa','reparación':'casa',
+  // Auto
+  'nafta':'auto','combustible':'auto','estacionamiento':'auto','garage':'auto','peaje':'auto',
+  'lavado':'auto','service':'auto','mecanico':'auto','mecánico':'auto','taller':'auto',
+  'seguro auto':'auto','patente':'auto',
+  // Salud
+  'osde':'salud','prepaga':'salud','obra social':'salud',
+  'farmacia':'salud','medico':'salud','médico':'salud','doctor':'salud',
+  'hospital':'salud','clinica':'salud','clínica':'salud','dentista':'salud','oculista':'salud',
+  'kinesiolog':'salud','traumatolog':'salud',
+  // Bienestar
+  'terapia':'bienestar','psicologo':'bienestar','psicólogo':'bienestar','psiquiatra':'bienestar',
+  'gym':'bienestar','natacion':'bienestar','natación':'bienestar','pilates':'bienestar',
+  'yoga':'bienestar','crossfit':'bienestar','deporte':'bienestar',
+  // Vida social
+  'restaurant':'social','cafe ':'social','cafeteria':'social','cafetería':'social',
+  'pizza':'social','sushi':'social','delivery':'social','rappi':'social','pedidosya':'social',
+  'almuerzo':'social','cena':'social','desayuno':'social',
+  'tiepolo':'social','avito':'social','mcdonalds':'social',
+  'hamburguesa':'social','empanada':'social','medialunas':'social',
+  'vino':'social','cerveza':'social','fernet':'social','whisky':'social','trago':'social',
+  'alcohol':'social','bar ':'social',
+  // Regalos
+  'regalo':'regalos','cumple':'regalos','presente':'regalos',
+  // Enmarcación
   'impresion':'enmarcacion','impresión':'enmarcacion',
   'enmarcacion':'enmarcacion','enmarcación':'enmarcacion',
-  'monotributo':'enmarcacion','honorario':'enmarcacion','material':'enmarcacion',
+  'monotributo':'enmarcacion','honorario':'enmarcacion',
 };
 
-// Inline food detection: if text contains a known food word not matched above, fallback to verduleria
+const VIVERES_WORDS = ['zanahoria','tomate','lechuga','papa','zapallo','cebolla','ajo','espinaca','acelga','brocoli','manzana','banana','naranja','limon','pera','uva','frutilla','girgolas','hongos','verdura','fruta','leche','manteca','queso','fiambre','yogur','huevo','arroz','harina','aceite','azucar','fideos','yerba'];
 const VERDULERIA_WORDS = ['zanahoria','tomate','lechuga','papa','zapallo','cebolla','ajo','pimiento','espinaca','acelga','brocoli','brócoli','choclo','batata','remolacha','perejil','cilantro','albahaca','manzana','banana','naranja','limon','limón','pera','uva','frutilla','durazno','sandia','sandía','girgolas','hongos','verdura','fruta'];
-const SUPERMERCADO_WORDS = ['leche','manteca','queso','fiambre','yogur','huevo','arroz','harina','aceite','azucar','azúcar','fideos','pasta','atun','atún','mermelada','galletita','yerba','te ','té '];
 const BOT_PAYMENTS = {
   'debito':'Débito','débito':'Débito','debit':'Débito',
   'credito':'Crédito','crédito':'Crédito','credit':'Crédito',
@@ -1325,9 +1299,8 @@ function processBotInput(){
   const cats=[];
   getCategories().forEach(cat=>{const n=cat.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(input.includes(n))cats.push(cat.id);});
   Object.entries(BOT_KW).forEach(([kw,catId])=>{if(input.includes(kw)&&!cats.includes(catId))cats.push(catId);});
-  // Specific produce/food word detection
-  if(!cats.includes('verduleria')&&VERDULERIA_WORDS.some(w=>input.includes(w)))cats.push('verduleria');
-  if(!cats.includes('supermercado')&&SUPERMERCADO_WORDS.some(w=>input.includes(w)))cats.push('supermercado');
+  // Specific food word detection → Víveres
+  if(!cats.includes('viveres')&&VIVERES_WORDS.some(w=>input.includes(w)))cats.push('viveres');
   if(!cats.length)cats.push('otros');
   let desc=raw.replace(/^\s*(gaste|gasté|gastamos|pague|pagué|pagamos|compre|compré|compramos|cargue|cargué|registra|anota)\s*/i,'').replace(/\d[\d.,]*/g,'').replace(/\s+en\s+/gi,' ').replace(/\s{2,}/g,' ').trim();
   if(!desc)desc=cats.map(c=>getCatById(c)?.name).filter(Boolean).join(' + ');
@@ -2153,28 +2126,23 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 loadState();
 // Always clear old versions
 ['gastos_v1','gastos_v2','eh_state'].forEach(k=>localStorage.removeItem(k));
-if(!localStorage.getItem('gastos_v4')){
+if(!localStorage.getItem('gastos_v5')){
   state.transactions=[];state.budgets={};state.goals=[];state.patrimonio=[];state.savings=0;
   state.lists=[];state.frequent=[];state.customCats=[];state.assets=[];
 
   // Budgets for all base categories
   state.budgets={
-    supermercado:400000, verduleria:100000, almacen:80000,
-    dietetica:60000, limpieza:50000,
-    expensas:1100000, servicios:120000, seguro_hogar:50000, mantenimiento:80000,
-    nafta:80000, estacionamiento:40000, lavado_auto:30000, service:50000, seguro_auto:40000,
-    prepaga:250000, farmacia:100000, medico:80000, kinesio:50000,
-    terapia:80000, deporte:80000,
-    restaurante:300000, cafe:60000, delivery:80000,
-    alcohol:60000, regalos:80000, enmarcacion:500000, otros:60000
+    viveres:600000, casa:1200000, auto:200000,
+    salud:500000, bienestar:150000, social:400000,
+    regalos:100000, enmarcacion:600000, otros:80000
   };
 
   // Frequent items
   state.frequent=[
-    {id:'f1',desc:'Expensas',          amount:942578, categories:['expensas'],   space:'casa',    type:'expense',payment:'Débito'},
-    {id:'f2',desc:'OSDE',              amount:198000, categories:['prepaga'],    space:'casa',    type:'expense',payment:'Débito'},
-    {id:'f3',desc:'Edesur',            amount:47871,  categories:['servicios'],  space:'casa',    type:'expense',payment:'Débito'},
-    {id:'f4',desc:'Metrogas',          amount:5056,   categories:['servicios'],  space:'casa',    type:'expense',payment:'MP'},
+    {id:'f1',desc:'Expensas',          amount:942578, categories:['casa'],       space:'casa',    type:'expense',payment:'Débito'},
+    {id:'f2',desc:'OSDE',              amount:198000, categories:['salud'],      space:'casa',    type:'expense',payment:'Débito'},
+    {id:'f3',desc:'Edesur',            amount:47871,  categories:['casa'],       space:'casa',    type:'expense',payment:'Débito'},
+    {id:'f4',desc:'Metrogas',          amount:5056,   categories:['casa'],       space:'casa',    type:'expense',payment:'MP'},
     {id:'f5',desc:'Ingreso familiar',  amount:2000000,categories:[],             space:'casa',    type:'income', payment:'Transferencia'},
     {id:'f6',desc:'Monotributo Guada', amount:37085,  categories:['enmarcacion'],space:'estudio', type:'expense',payment:'MP'},
   ];
@@ -2199,7 +2167,7 @@ if(!localStorage.getItem('gastos_v4')){
 
   state.settings={refIncome:0, studioSavingsGoal:0, inflationRate:2.9, cotizUSD:1300};
 
-  localStorage.setItem('gastos_v4','1'); saveState();
+  localStorage.setItem('gastos_v5','1'); saveState();
 }
 try {
   renderAll();
