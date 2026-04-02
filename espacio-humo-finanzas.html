@@ -640,7 +640,7 @@ document.addEventListener('touchend', e => {
   <div id="rollover-content"></div>
   <button class="btn btn-primary" onclick="rolloverToNextMonth()">Pasar al mes que empieza</button>
   <button class="btn btn-mustard btn-gap" onclick="rolloverToSavings()">Guardar en Patrimonio</button>
-  <button class="btn btn-secondary btn-gap" onclick="closeModal('modal-rollover')">Decidir después</button>
+  <button class="btn btn-secondary btn-gap" onclick="markRolloverSeen();saveState();closeModal('modal-rollover')">Decidir después</button>
 </div></div>
 
 <!-- BOT CONFIRM (category + payment) -->
@@ -892,6 +892,7 @@ document.addEventListener('touchend', e => {
   <button class="btn btn-secondary btn-gap" onclick="closeModal('modal-settings')">Cerrar</button>
   <div class="divider"></div>
   <button class="btn btn-secondary" style="color:var(--red);" onclick="clearAllData()">Borrar todos los datos</button>
+  <button class="btn btn-secondary btn-gap" onclick="window.testRollover&&window.testRollover();closeModal('modal-settings');" style="color:var(--muted);font-size:13px;">Simular fin de mes (test)</button>
 </div></div>
 
 <!-- TX EDIT -->
@@ -1602,27 +1603,34 @@ function checkMonthRollover(){
   const now = new Date();
   const today = now.toISOString().split('T')[0];
   const lastCheck = state.lastRolloverCheck || '';
-  // Only check once per day, and only on day 1 of month
-  if(lastCheck === today) return;
-  if(now.getDate() !== 1) { state.lastRolloverCheck=today; saveState(); return; }
-  state.lastRolloverCheck = today;
-  // Calculate last month's balance
+  // Only show once per calendar month-transition (not every day)
+  // Key: "lastRolloverMonth" stores "YYYY-MM" of last time we showed it
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  if(state.lastRolloverMonth === currentMonthKey) return;
+  // Calculate previous month's balance (both spaces combined)
   let m = now.getMonth()-1, y = now.getFullYear();
   if(m<0){m=11;y--;}
   const lastMonthTxs = state.transactions.filter(tx=>{
     const d=new Date(tx.date+'T12:00:00');
     return d.getMonth()===m && d.getFullYear()===y && tx.type!=='savings';
   });
+  if(!lastMonthTxs.length) return; // no data for last month yet
   const inc = lastMonthTxs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
   const exp = lastMonthTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
   const leftover = inc - exp;
-  if(leftover <= 0){ saveState(); return; }
-  // Show rollover modal
+  if(leftover <= 0) return;
   state._rolloverAmount = leftover;
   state._rolloverMonth = MONTHS[m];
   saveState();
-  setTimeout(()=>openRolloverModal(leftover, MONTHS[m]), 600);
+  setTimeout(()=>openRolloverModal(leftover, MONTHS[m]), 800);
 }
+
+// Call this manually to test or trigger on demand
+window.testRollover = function(){
+  state.lastRolloverMonth = '';
+  saveState();
+  checkMonthRollover();
+};
 
 function openRolloverModal(amount, monthName){
   const el = document.getElementById('rollover-content');
@@ -1636,22 +1644,27 @@ function openRolloverModal(amount, monthName){
   openModal('modal-rollover');
 }
 
+function markRolloverSeen(){
+  const now=new Date();
+  state.lastRolloverMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  state._rolloverAmount=0;
+}
 function rolloverToNextMonth(){
   const amount = state._rolloverAmount || 0;
   const month = state._rolloverMonth || '';
-  // Register as income in current month
-  const tx={id:'ro'+Date.now(),amount,type:'income',desc:'Sobrante de '+month,categories:[],space:state.currentSpace,payment:'Transferencia',date:new Date().toISOString().split('T')[0],comment:'',fijo:false,currency:'ARS'};
+  const tx={id:'ro'+Date.now(),amount,type:'income',desc:'Sobrante de '+month,categories:[],space:'casa',payment:'Transferencia',date:new Date().toISOString().split('T')[0],comment:'',fijo:false,currency:'ARS'};
   state.transactions.unshift(tx);
-  state._rolloverAmount=0;saveState();closeModal('modal-rollover');renderAll();
+  markRolloverSeen();saveState();closeModal('modal-rollover');renderAll();
   showToast('$'+fmt(amount)+' sumados al mes');
 }
 
 function rolloverToSavings(){
   const amount = state._rolloverAmount || 0;
   const month = state._rolloverMonth || '';
-  const tx={id:'rs'+Date.now(),amount,type:'savings',desc:'Ahorro sobrante '+month,categories:[],space:state.currentSpace,payment:'Transferencia',date:new Date().toISOString().split('T')[0],comment:'',fijo:false,currency:'ARS'};
-  state.patrimonio.unshift(tx);state.savings=(state.savings||0)+amount;
-  state._rolloverAmount=0;saveState();closeModal('modal-rollover');renderAll();
+  const tx={id:'rs'+Date.now(),amount,type:'savings',desc:'Ahorro sobrante '+month,assetId:'ars',categories:[],space:'casa',payment:'Transferencia',date:new Date().toISOString().split('T')[0],comment:'',fijo:false,currency:'ARS'};
+  state.patrimonio.unshift({...tx});
+  state.savings=(state.savings||0)+amount;
+  markRolloverSeen();saveState();closeModal('modal-rollover');renderAll();
   showToast('$'+fmt(amount)+' guardados en Patrimonio');
 }
 
